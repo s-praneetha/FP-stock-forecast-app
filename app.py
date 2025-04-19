@@ -23,7 +23,7 @@ with st.sidebar:
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
-    ticker = st.text_input("💹 Stock Ticker Symbol", value="RELIANCE.NS")
+    ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 
 # ----------------------
@@ -46,23 +46,23 @@ if run_forecast:
     reinit=True  # Avoids conflicts in Streamlit reruns 
     )
     # Step 1: Download Data
-    # stocks_df = yf.download(ticker,
-    #                         start=start_date,
-    #                         end=end_date,
-    #                         interval='1d',
-    #                         auto_adjust=False)
-    session = requests_cache.CachedSession(cache_name='yfinance_cache', backend='memory', expire_after=180)
+    stocks_df = yf.download(ticker,
+                            start=start_date,
+                            end=end_date,
+                            interval='1d',
+                            auto_adjust=False)
+    # session = requests_cache.CachedSession(cache_name='yfinance_cache', backend='memory', expire_after=180)
 
-    stocks_df = yf.download(
-        tickers=ticker,
-        start=start_date,
-        end=end_date,
-        interval="1d",
-        auto_adjust=False,
-        progress=False,
-        threads=False,
-        session=session
-        )
+    # stocks_df = yf.download(
+    #     tickers=ticker,
+    #     start=start_date,
+    #     end=end_date,
+    #     interval="1d",
+    #     auto_adjust=False,
+    #     progress=False,
+    #     threads=False,
+    #     session=session
+    #     )
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
     
