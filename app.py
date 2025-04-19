@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import yfinance as yf
+from yahooquery import Ticker
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import load_model
@@ -8,8 +8,6 @@ from datetime import date, timedelta
 import streamlit as st
 import wandb
 import os
-import pandas_datareader.data as web
-from alpha_vantage.timeseries import TimeSeries
 
 # ----------------------
 # Streamlit UI Setup
@@ -19,12 +17,12 @@ st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 
 # Sidebar Controls
 with st.sidebar:
-    st.markdown("### 🧮 Forecasting Controls")
-    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
-    end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
+    st.markdown("### 🧼 Forecasting Controls")
+    start_date = st.date_input("🗓️ Select Start Date", date(2020, 1, 1))
+    end_date = date.today() - timedelta(days=1)
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
-    ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
+    ticker = st.text_input("📉 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 
 # ----------------------
@@ -46,26 +44,23 @@ if run_forecast:
         reinit=True
     )
 
-    # Step 1: Download Data (With Fallback)
-    # Initialize Alpha Vantage
-    alpha_api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")  # Set this as env var in Streamlit secrets/render
-    ts = TimeSeries(key=alpha_api_key, output_format='pandas')
-
+    # Step 1: Fetch data using yahooquery
     try:
-        data, meta = ts.get_daily_adjusted(symbol=ticker, outputsize='full')
-        stocks_df = data[['5. adjusted close']].copy()
-        stocks_df.rename(columns={'5. adjusted close': 'Adj_Close'}, inplace=True)
-        stocks_df.index = pd.to_datetime(stocks_df.index)
-        stocks_df = stocks_df.sort_index()
-        stocks_df = stocks_df.loc[start_date:end_date]
+        ticker_obj = Ticker(ticker)
+        df = ticker_obj.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), interval="1d")
+        df = df.reset_index()
+        df = df[df['symbol'] == ticker]
+        df = df[['date', 'adjclose']]
+        df.columns = ['Date', 'Adj_Close']
+        df.set_index('Date', inplace=True)
+        df.index = pd.to_datetime(df.index)
+        stocks_df = df.copy()
     except Exception as e:
-        st.error(f"❌ Alpha Vantage fetch failed: {e}")
+        st.error(f"❌ Failed to fetch data using yahooquery: {e}")
         stocks_df = pd.DataFrame()
-
-    # Proceed only if data is valid
-    if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
 
+    # Proceed only if data is valid
     if 'Adj_Close' not in stocks_df.columns or stocks_df.empty:
         st.error("'Adj_Close' not found in data or empty dataset.")
     else:
@@ -128,9 +123,9 @@ if run_forecast:
         st.markdown("### 📌 Key Forecast Insights")
         kpi1, spacer, kpi2 = st.columns([2, 0.5, 2])
         with kpi1:
-            st.metric(label=f"📅 First Forecast Date\n({first_date})", value=f"{first_value:.2f}")
+            st.metric(label=f"🗓️ First Forecast Date\n({first_date})", value=f"{first_value:.2f}")
         with kpi2:
-            st.metric(label=f"📅 Last Forecast Date\n({last_date})", value=f"{last_value:.2f}")
+            st.metric(label=f"🗓️ Last Forecast Date\n({last_date})", value=f"{last_value:.2f}")
 
         # Step 8: Plot Forecast
         st.markdown(f"### 📆 Forecast for Next **{forecast_horizon}** Days")
@@ -157,15 +152,14 @@ if run_forecast:
 
             csv = forecast_df.to_csv().encode('utf-8')
             st.download_button(
-                label="📥 Download Forecast CSV",
+                label="📅 Download Forecast CSV",
                 data=csv,
                 file_name=f"{ticker}_forecast.csv",
                 mime='text/csv'
             )
 
-        # Step 10: Visual Insight – Arrows
+        # Step 10: Visual Insight
         st.markdown("### 🔍 Visual Insights on Forecast Fluctuations")
-
         forecast_df['Change'] = forecast_df['Forecast'].diff()
         colors = ['green' if val >= 0 else 'red' for val in forecast_df['Change'][1:]]
         col1, col2 = st.columns([1, 1])
