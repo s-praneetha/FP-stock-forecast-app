@@ -3,7 +3,8 @@ import numpy as np
 from yahooquery import Ticker
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import load_model
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 from datetime import date, timedelta
 import streamlit as st
 import wandb
