@@ -50,12 +50,14 @@ if run_forecast:
                             end=end_date,
                             interval='1d',
                             auto_adjust=False)
-
-    if 'Adj Close' not in stocks_df.columns or stocks_df.empty:
-        st.error("'Adj Close' not found in data or empty dataset.")
+    if 'Adj Close' in stocks_df.columns:
+    stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
+    
+    if 'Adj_Close' not in stocks_df.columns or stocks_df.empty:
+    st.error("'Adj_Close' not found in data or empty dataset.")
     else:
-        stocks_df = stocks_df[['Adj Close']].dropna()
-        stocks_df.columns = ['adj_close']
+        stocks_df = stocks_df[['Adj_Close']].dropna()
+        stocks_df.columns = ['adj_close'] 
 
         # Step 2: Preprocessing
         scaler = MinMaxScaler()
