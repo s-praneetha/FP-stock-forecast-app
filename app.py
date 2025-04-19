@@ -9,6 +9,7 @@ import streamlit as st
 import wandb
 import os
 import pandas_datareader.data as web
+from alpha_vantage.timeseries import TimeSeries
 
 # ----------------------
 # Streamlit UI Setup
@@ -46,24 +47,20 @@ if run_forecast:
     )
 
     # Step 1: Download Data (With Fallback)
+    # Initialize Alpha Vantage
+    alpha_api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")  # Set this as env var in Streamlit secrets/render
+    ts = TimeSeries(key=alpha_api_key, output_format='pandas')
+
     try:
-        stocks_df = yf.download(ticker,
-                                start=start_date,
-                                end=end_date,
-                                interval='1d',
-                                auto_adjust=False)
-        if stocks_df.empty:
-            raise ValueError("Empty data from yfinance")
+        data, meta = ts.get_daily_adjusted(symbol=ticker, outputsize='full')
+        stocks_df = data[['5. adjusted close']].copy()
+        stocks_df.rename(columns={'5. adjusted close': 'Adj_Close'}, inplace=True)
+        stocks_df.index = pd.to_datetime(stocks_df.index)
+        stocks_df = stocks_df.sort_index()
+        stocks_df = stocks_df.loc[start_date:end_date]
     except Exception as e:
-        st.warning(f"⚠️ yfinance failed. Trying pandas_datareader instead: {e}")
-        try:
-            # Remove .NS suffix for pandas_datareader but still target Yahoo
-            ticker_pd = ticker.replace(".NS", "") + ".NS"
-            stocks_df = web.DataReader(ticker_pd, data_source='yahoo', start=start_date, end=end_date)
-            stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
-        except Exception as e2:
-            st.error(f"❌ Failed to fetch data using pandas_datareader: {e2}")
-            stocks_df = pd.DataFrame()
+        st.error(f"❌ Alpha Vantage fetch failed: {e}")
+        stocks_df = pd.DataFrame()
 
     # Proceed only if data is valid
     if 'Adj Close' in stocks_df.columns:
