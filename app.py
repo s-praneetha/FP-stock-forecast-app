@@ -8,6 +8,7 @@ from datetime import date, timedelta
 import streamlit as st
 import wandb
 import os
+import requests_cache
 
 # ----------------------
 # Streamlit UI Setup
@@ -45,11 +46,21 @@ if run_forecast:
     reinit=True  # Avoids conflicts in Streamlit reruns 
     )
     # Step 1: Download Data
-    stocks_df = yf.download(ticker,
-                            start=start_date,
-                            end=end_date,
-                            interval='1d',
-                            auto_adjust=False)
+    # stocks_df = yf.download(ticker,
+    #                         start=start_date,
+    #                         end=end_date,
+    #                         interval='1d',
+    #                         auto_adjust=False)
+    stocks_df = yf.download(
+        tickers=ticker,
+        start=start_date,
+        end=end_date,
+        interval="1d",
+        auto_adjust=False,
+        progress=False,
+        threads=False,
+        session=session
+        )
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
     
