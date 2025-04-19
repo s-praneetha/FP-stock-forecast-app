@@ -14,3 +14,7 @@ wandb==0.15.12
 pandas_datareader==0.10.0
 alpha_vantage==2.3.1
 yahooquery==2.3.6
+rich==13.7.1
+markdown-it-py==2.2.0
+mdurl==0.1.2
+pygments==2.15.1
