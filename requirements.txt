@@ -2,14 +2,12 @@ pandas==1.5.3
 numpy==1.23.5
 matplotlib==3.7.1
 seaborn==0.12.2
-yfinance
+yfinance==0.2.33
 scikit-learn==1.2.2
 tensorflow==2.12.0
 keras==2.12.0
 xgboost==1.7.5
 statsmodels==0.13.5
 joblib==1.2.0
-streamlit>=0.78.0
+streamlit==1.24.0
 wandb
-requests_cache==1.1.1
-plotly
