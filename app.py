@@ -51,6 +51,8 @@ if run_forecast:
     #                         end=end_date,
     #                         interval='1d',
     #                         auto_adjust=False)
+    session = requests_cache.CachedSession(cache_name='yfinance_cache', backend='memory', expire_after=180)
+
     stocks_df = yf.download(
         tickers=ticker,
         start=start_date,
