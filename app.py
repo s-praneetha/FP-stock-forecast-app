@@ -87,7 +87,7 @@ if run_forecast:
         X_input = X_input.reshape((X_input.shape[0], X_input.shape[1], 1))
 
         # Step 3: Load Model
-        model = load_model("lstm_model_1.keras", compile=False)
+        model = load_model("lstm_model_1.h5", compile=False)
 
         # Step 4: Forecast
         last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
