@@ -87,7 +87,7 @@ if run_forecast:
         X_input = X_input.reshape((X_input.shape[0], X_input.shape[1], 1))
 
         # Step 3: Load Model
-        model = load_model("lstm_model_1.keras")
+        model = load_model("lstm_model_1.keras", compile=False)
 
         # Step 4: Forecast
         last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
@@ -163,14 +163,7 @@ if run_forecast:
                 mime='text/csv'
             )
 
-
-            # ----------------------
-            # ----------------------
-            # ----------------------
-            # ----------------------
-        # ----------------------
         # Step 10: Visual Insights on Forecasted Data (With Identifiers)
-        # ----------------------
 
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("### 🔍 Visual Insights on Forecast Fluctuations")
