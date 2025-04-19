@@ -6,6 +6,8 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import load_model
 from datetime import date, timedelta
 import streamlit as st
+import wandb
+import os
 
 # ----------------------
 # Streamlit UI Setup
@@ -27,6 +29,21 @@ with st.sidebar:
 # Forecast Logic
 # ----------------------
 if run_forecast:
+    # Secure W&B login using Streamlit secrets
+    wandb.login(key=os.environ.get("WANDB_API_KEY"))
+    # Initialize W&B
+    wandb.init(
+    project="stock-forecasting-lstm",
+    name=f"{ticker}_{date.today()}",
+    config={
+        "ticker": ticker,
+        "start_date": start_date,
+        "forecast_horizon": forecast_horizon,
+        "model": "LSTM",
+        "window_size": 60
+    },
+    reinit=True  # Avoids conflicts in Streamlit reruns 
+    )
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
                             start=start_date,
@@ -79,6 +96,13 @@ if run_forecast:
             'Lower Bound (95%)': lower_bound,
             'Upper Bound (95%)': upper_bound
         }, index=forecast_dates)
+        # Log Forecast Metrics
+        wandb.log({
+        "start_price": forecast_df['Forecast'].iloc[0],
+        "end_price": forecast_df['Forecast'].iloc[-1],
+        "max_price": forecast_df['Forecast'].max(),
+        "min_price": forecast_df['Forecast'].min()
+         })
 
         # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
@@ -193,6 +217,4 @@ if run_forecast:
             ax_right.grid(True)
             st.pyplot(fig_right, use_container_width=True)
 
-
-
-
+wandb.finish()
