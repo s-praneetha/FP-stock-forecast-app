@@ -13,6 +13,7 @@ import requests_cache
 from pandas_datareader import data as pdr
 import time
 import wandb
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # ----------------------
 # Streamlit UI Setup
