@@ -46,23 +46,9 @@ if run_forecast:
     reinit=True  # Avoids conflicts in Streamlit reruns 
     )
     # Step 1: Download Data
-    stocks_df = yf.download(ticker,
-                            start=start_date,
-                            end=end_date,
-                            interval='1d',
-                            auto_adjust=False)
-    # session = requests_cache.CachedSession(cache_name='yfinance_cache', backend='memory', expire_after=180)
+    stocks_df = pd.read_csv("tatasteel_5yr.csv", index_col="Date", parse_dates=True)
+    stocks_df = stocks_df[(stocks_df.index >= pd.to_datetime(start_date)) & (stocks_df.index <= pd.to_datetime(end_date))]
 
-    # stocks_df = yf.download(
-    #     tickers=ticker,
-    #     start=start_date,
-    #     end=end_date,
-    #     interval="1d",
-    #     auto_adjust=False,
-    #     progress=False,
-    #     threads=False,
-    #     session=session
-    #     )
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
     
