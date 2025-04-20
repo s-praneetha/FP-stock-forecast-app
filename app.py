@@ -25,6 +25,9 @@ with st.sidebar:
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
     ticker = st.text_input("💹 Stock Ticker Symbol", value="GOOGL")
     run_forecast = st.button("📊 Run Forecast")
+# Timezone-safe dates (yfinance sometimes expects strings)
+start_str = start_date.strftime("%Y-%m-%d")
+end_str = end_date.strftime("%Y-%m-%d")
 
 # ----------------------
 # Forecast Logic
@@ -33,8 +36,8 @@ if run_forecast:
 
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
-                            start=start_date,
-                            end=end_date,
+                            start=start_str,
+                            end=end_str,
                             interval='1d',
                             auto_adjust=False)
     st.dataframe(stocks_df)
