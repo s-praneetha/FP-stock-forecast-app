@@ -9,6 +9,8 @@ import streamlit as st
 import wandb
 import os
 import requests_cache
+from keras.models import load_model
+from keras.saving.legacy.saved_model import load_model as legacy_load_model
 
 # ----------------------
 # Streamlit UI Setup
@@ -82,7 +84,7 @@ if run_forecast:
         X_input = X_input.reshape((X_input.shape[0], X_input.shape[1], 1))
 
         # Step 3: Load Model
-        model = load_model("lstm_model_1.h5", compile=False)
+        model = legacy_load_model("lstm_model_1.h5", compile=False)
 
         # Step 4: Forecast
         last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
