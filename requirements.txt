@@ -15,4 +15,3 @@ wandb
 requests_cache>=1.0
 lxml>=4.9.1
 pandas_datareader==0.10.0
-time==1.0
