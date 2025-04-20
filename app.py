@@ -19,7 +19,7 @@ st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 # Sidebar Controls
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
-    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
+    start_date = st.date_input("📅 Select Start Date", date(2024, 1, 1))
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
