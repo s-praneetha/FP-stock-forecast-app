@@ -98,7 +98,10 @@ if run_forecast:
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
 
-        run_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Calculate RMSE and MAPE
+        rmse = np.sqrt(mean_squared_error(stocks_df['adj_close'][-forecast_horizon:], forecast))
+        mape = mean_absolute_percentage_error(stocks_df['adj_close'][-forecast_horizon:], forecast)
+
         run_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Step 5: Confidence Intervals (±95%)
@@ -120,8 +123,18 @@ if run_forecast:
         "max_price": forecast_df['Forecast'].max(),
         "min_price": forecast_df['Forecast'].min(),
         "model_file": "lstm_model_1.h5",  # Model file path
-        "run_date": run_date
-         })
+          "run_date": run_date,
+            "rmse": rmse,
+            "mape": mape
+        })
+
+        # Log Model File to W&B
+        wandb.save("lstm_model_1.h5")  # Save the model file
+
+        # Log Historical Dataset as CSV
+        csv_file = "historical_data.csv"
+        stocks_df.to_csv(csv_file)
+        wandb.save(csv_file)  # Log the dataset
         
         # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
