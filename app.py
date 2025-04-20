@@ -33,7 +33,7 @@ def fetch_stock_data(ticker, start_date, end_date, retries=3, delay=2):
     for attempt in range(retries):
         try:
             # Try fetching stock data using pandas_datareader
-            stocks_df = pdr.get_data_yahoo(ticker, start=start_date, end=end_date)
+            stocks_df_1 = pdr.get_data_yahoo(ticker, start=start_date, end=end_date)
             return stocks_df
         except Exception as e:
             if attempt < retries - 1:
