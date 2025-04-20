@@ -5,7 +5,8 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import load_model
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
+from datetime import datetime
 import streamlit as st
 import os
 import requests_cache
@@ -22,7 +23,7 @@ st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 # Sidebar Controls
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
-    start_date = st.date_input("📅 Select Start Date", date(2024, 1, 1))
+    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
@@ -97,6 +98,7 @@ if run_forecast:
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
 
+        run_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         run_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Step 5: Confidence Intervals (±95%)
