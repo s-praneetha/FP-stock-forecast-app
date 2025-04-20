@@ -48,7 +48,7 @@ if run_forecast:
     # Step 1: Download Data
     stocks_df = pd.read_csv("tatasteel_5yr.csv", index_col=0, skiprows=[1])
     stocks_df.index = pd.to_datetime(stocks_df.index, errors='coerce')
-    stocks_df.dropna(subset=['Price'], inplace=True)
+    stocks_df = stocks_df[stocks_df.index.notna()]
     stocks_df.index.name = "Date"
 
     stocks_df = stocks_df.loc[
@@ -66,6 +66,7 @@ if run_forecast:
         stocks_df = stocks_df[['Adj_Close']].dropna()
         stocks_df.columns = ['adj_close'] 
 
+        
         # Step 2: Preprocessing
         scaler = MinMaxScaler()
         scaled_data = scaler.fit_transform(stocks_df[['adj_close']])
