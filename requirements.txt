@@ -4,10 +4,10 @@ matplotlib==3.7.1
 seaborn==0.12.2
 yfinance==0.2.33
 scikit-learn==1.2.2
-tensorflow==2.13.0           # ✅ Update this line
+tensorflow==2.12.0
+keras==2.12.0
 xgboost==1.7.5
 statsmodels==0.13.5
 joblib==1.2.0
 streamlit==1.24.0
-wandb==0.15.12
-requests_cache==1.2.1
+wandb
