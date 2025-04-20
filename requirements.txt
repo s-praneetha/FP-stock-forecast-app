@@ -9,5 +9,5 @@ xgboost==1.7.5
 statsmodels==0.13.5
 joblib==1.2.0
 streamlit==1.24.0
-wandb
-requests_cache
+wandb==0.15.12
+requests_cache==1.2.1
