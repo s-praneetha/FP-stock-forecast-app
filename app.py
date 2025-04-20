@@ -97,7 +97,7 @@ if run_forecast:
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
 
-        run_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        run_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Step 5: Confidence Intervals (±95%)
         lower_bound = forecast * 0.95
