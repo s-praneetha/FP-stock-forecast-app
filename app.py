@@ -46,8 +46,9 @@ if run_forecast:
     reinit=True  # Avoids conflicts in Streamlit reruns 
     )
     # Step 1: Download Data
-    stocks_df = pd.read_csv("tatasteel_5yr.csv", index_col=0)
-    stocks_df.index = pd.to_datetime(stocks_df.index)
+    stocks_df = pd.read_csv("tatasteel_5yr.csv", index_col=0, skiprows=[1])
+    stocks_df.index = pd.to_datetime(stocks_df.index, errors='coerce')
+    stocks_df.dropna(subset=['Price'], inplace=True)
     stocks_df.index.name = "Date"
 
     stocks_df = stocks_df.loc[
