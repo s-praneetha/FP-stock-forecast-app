@@ -7,11 +7,8 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import load_model
 from datetime import date, timedelta
 import streamlit as st
-import wandb
 import os
-import pytz
 import requests_cache
-from datetime import datetime, timedelta
 
 # ----------------------
 # Streamlit UI Setup
@@ -19,48 +16,21 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Stock Forecast App", layout="wide")
 st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 
-# Set the timezone to 'Asia/Kolkata'
-tz = pytz.timezone('Asia/Kolkata')
-
 # Sidebar Controls
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
-    start_date = st.date_input("📅 Select Start Date", datetime(2020, 1, 1).date())
-    end_date = st.sidebar.date_input("End Date", value=(datetime.now() - timedelta(days=1)).date())
+    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
+    st.markdown(f"{start_date}")
+    end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
     ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 
-    # Convert dates to timezone-aware datetime objects
-    start_datetime = tz.localize(datetime.combine(start_date, datetime.min.time()))
-    end_datetime = tz.localize(datetime.combine(end_date, datetime.min.time()))
-
 # ----------------------
 # Forecast Logic
 # ----------------------
 if run_forecast:
-    
-    # Secure W&B login using Streamlit secrets
-    wandb.login(key=os.environ.get("WANDB_API_KEY"))
-    # Initialize W&B
-    wandb.init(
-    project="stock-forecasting-lstm",
-    name=f"{ticker}_{date.today()}",
-    config={
-        "ticker": ticker,
-        "start_date": start_date,
-        "forecast_horizon": forecast_horizon,
-        "model": "LSTM",
-        "window_size": 60
-    },
-    reinit=True  # Avoids conflicts in Streamlit reruns 
-    )
-
-    # Step 1: Download Data using yfinance
-    stock = yf.Ticker(ticker)
-    stocks_df_1 = stock.history(period='1d', start=start_datetime, end=end_datetime)
-    st.dataframe(stocks_df_1)
 
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
@@ -68,15 +38,11 @@ if run_forecast:
                             end=end_date,
                             interval='1d',
                             auto_adjust=False)
-                            
-    st.dataframe(stocks_df)
-                        
+
     if 'Adj Close' in stocks_df.columns:
-        st.dataframe(stocks_df)
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
     
     if 'Adj_Close' not in stocks_df.columns or stocks_df.empty:
-        st.dataframe(stocks_df)
         st.error("'Adj_Close' not found in data or empty dataset.")
     else:
         stocks_df = stocks_df[['Adj_Close']].dropna()
@@ -121,13 +87,6 @@ if run_forecast:
             'Lower Bound (95%)': lower_bound,
             'Upper Bound (95%)': upper_bound
         }, index=forecast_dates)
-        # Log Forecast Metrics
-        wandb.log({
-        "start_price": forecast_df['Forecast'].iloc[0],
-        "end_price": forecast_df['Forecast'].iloc[-1],
-        "max_price": forecast_df['Forecast'].max(),
-        "min_price": forecast_df['Forecast'].min()
-         })
 
         # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
@@ -234,5 +193,3 @@ if run_forecast:
             ax_right.set_ylabel("Change")
             ax_right.grid(True)
             st.pyplot(fig_right, use_container_width=True)
-
-wandb.finish()
