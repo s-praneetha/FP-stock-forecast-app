@@ -35,8 +35,8 @@ with st.sidebar:
 if run_forecast:
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
-                            start=start_str,
-                            end=end_str,
+                            start=start_date,
+                            end=end_date,
                             interval='1d',
                             auto_adjust=False)
     st.dataframe(stocks_df)
