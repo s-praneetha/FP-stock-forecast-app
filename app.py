@@ -5,7 +5,7 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import load_model
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import streamlit as st
 import os
 import requests_cache
