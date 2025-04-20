@@ -132,7 +132,8 @@ if run_forecast:
         
         model_artifact = wandb.Artifact('lstm_model', type='model')
         model_artifact.add_file("lstm_model_1.h5")
-        wandb.log({"model_file": model_artifact})
+        #wandb.log({"model_file": model_artifact})
+        wandb.log_artifact(model_artifact)
         
         # Forecasting with the trained model
         forecast_scaled = []
