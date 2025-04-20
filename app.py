@@ -10,6 +10,7 @@ import streamlit as st
 import os
 import requests_cache
 from pandas_datareader import data as pdr
+import time
 
 # ----------------------
 # Streamlit UI Setup
