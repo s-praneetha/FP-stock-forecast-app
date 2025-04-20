@@ -75,22 +75,65 @@ if run_forecast:
         scaled_data = scaler.fit_transform(stocks_df[['adj_close']])
 
         def create_sequences(data, window_size):
-            X = []
+            X, y = [], []
             for i in range(window_size, len(data)):
                 X.append(data[i - window_size:i, 0])
-            return np.array(X)
+                y.append(data[i, 0])
+        return np.array(X), np.array(y)
 
         window_size = 60
-        X_input = create_sequences(scaled_data, window_size)
-        X_input = X_input.reshape((X_input.shape[0], X_input.shape[1], 1))
+        X, y = create_sequences(scaled_data, window_size)
+        X = X.reshape((X.shape[0], X.shape[1], 1))
+        
+        # Train-Test Split (for evaluation)
+        split_index = int(len(X) * 0.8)
+        X_train, X_test = X[:split_index], X[split_index:]
+        y_train, y_test = y[:split_index], y[split_index:]
+        
+        
+        # Step 3: Build LSTM Model
+        model = Sequential()
+        model.add(LSTM(64, return_sequences=True, input_shape=(X.shape[1], 1)))
+        model.add(Dropout(0.2))
+        model.add(LSTM(32))
+        model.add(Dropout(0.2))
+        model.add(Dense(1))
+        
+        
+        # Set a custom learning rate
+        optimizer = Adam(learning_rate=0.001)
+        
+        # Compile the model with this optimizer
+        model.compile(optimizer=optimizer, loss='mean_squared_error')
+        
+        #model.compile(optimizer='adam', loss='mean_squared_error')
+        model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=1)
+        
+        model.save("lstm_model_1.h5")
 
-        # Step 3: Load Model
-        model = load_model("lstm_model_1.h5", compile=False)
+        y_pred_scaled = model.predict(X_test)
+        y_test_scaled = y_test.reshape(-1, 1)
+        y_pred = scaler.inverse_transform(y_pred_scaled)
+        y_true = scaler.inverse_transform(y_test_scaled)
 
-        # Step 4: Forecast
-        last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+        mae = mean_absolute_error(y_true, y_pred)
+        r2 = r2_score(y_true, y_pred)
+
+        wandb.log({
+            "rmse": rmse,
+            "mape": mae,
+            "r2" : r2
+        })
+        
+        model_artifact = wandb.Artifact('lstm_model', type='model')
+        model_artifact.add_file("lstm_model_1.h5")
+        wandb.log({"model_file": model_artifact})
+        
+        # Forecasting with the trained model
         forecast_scaled = []
-
+        last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
+        
         for _ in range(forecast_horizon):
             next_pred = model.predict(last_sequence, verbose=0)[0][0]
             forecast_scaled.append(next_pred)
@@ -98,12 +141,14 @@ if run_forecast:
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
 
-        # Calculate RMSE and MAPE
-        rmse = np.sqrt(mean_squared_error(stocks_df['adj_close'][-forecast_horizon:], forecast))
-        mape = mean_absolute_percentage_error(stocks_df['adj_close'][-forecast_horizon:], forecast)
-
-        run_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+        # Log Forecast Metrics
+        wandb.log({
+        "start_price": forecast_df['Forecast'].iloc[0],
+        "end_price": forecast_df['Forecast'].iloc[-1],
+        "max_price": forecast_df['Forecast'].max(),
+        "min_price": forecast_df['Forecast'].min()
+        })
+        
         # Step 5: Confidence Intervals (±95%)
         lower_bound = forecast * 0.95
         upper_bound = forecast * 1.05
@@ -115,28 +160,6 @@ if run_forecast:
             'Lower Bound (95%)': lower_bound,
             'Upper Bound (95%)': upper_bound
         }, index=forecast_dates)
-        
-        # Log Forecast Metrics
-        wandb.log({
-        "start_price": forecast_df['Forecast'].iloc[0],
-        "end_price": forecast_df['Forecast'].iloc[-1],
-        "max_price": forecast_df['Forecast'].max(),
-        "min_price": forecast_df['Forecast'].min(),
-        "model_file": "lstm_model_1.h5",  # Model file path
-          "run_date": run_date,
-            "rmse": rmse,
-            "mape": mape
-        })
-
-        # Log Model File as an Artifact
-        model_artifact = wandb.Artifact('lstm_model', type='model')
-        model_artifact.add_file("lstm_model_1.h5")
-        wandb.log({"model_file": model_artifact})
-
-        # Log Historical Dataset as CSV
-        csv_file = "historical_data.csv"
-        stocks_df.to_csv(csv_file)
-        wandb.save(csv_file)
         
         # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
