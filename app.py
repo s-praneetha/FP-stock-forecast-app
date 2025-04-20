@@ -46,6 +46,12 @@ if run_forecast:
     },
     reinit=True  # Avoids conflicts in Streamlit reruns 
     )
+
+    # Step 1: Download Data using yfinance
+    stock = yf.Ticker(ticker)
+    stocks_df_1 = stock.history(period='1d', start=start_date, end=end_date)
+    st.dataframe(stocks_df_1)
+
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
                             start=start_date,
