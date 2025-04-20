@@ -9,6 +9,7 @@ from datetime import date, timedelta
 import streamlit as st
 import os
 import requests_cache
+from pandas_datareader import data as pdr
 
 # ----------------------
 # Streamlit UI Setup
@@ -34,6 +35,9 @@ end_str = end_date.strftime("%Y-%m-%d")
 # ----------------------
 if run_forecast:
 
+    stocks_df_1 = pdr.get_data_yahoo(ticker, start=start_str, end=end_str)
+    st.dataframe(stocks_df_1)
+    
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
                             start=start_str,
