@@ -80,7 +80,7 @@ if run_forecast:
             for i in range(window_size, len(data)):
                 X.append(data[i - window_size:i, 0])
                 y.append(data[i, 0])
-        return np.array(X), np.array(y)
+            return np.array(X), np.array(y)
 
         window_size = 60
         X, y = create_sequences(scaled_data, window_size)
