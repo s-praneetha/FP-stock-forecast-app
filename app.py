@@ -27,15 +27,15 @@ with st.sidebar:
     ticker = st.text_input("💹 Stock Ticker Symbol", value="GOOGL")
     run_forecast = st.button("📊 Run Forecast")
 # Timezone-safe dates (yfinance sometimes expects strings)
-start_str = start_date.strftime("%Y-%m-%d")
-end_str = end_date.strftime("%Y-%m-%d")
+# start_str = start_date.strftime("%Y-%m-%d")
+# end_str = end_date.strftime("%Y-%m-%d")
 
 # ----------------------
 # Forecast Logic
 # ----------------------
 if run_forecast:
 
-    stocks_df_1 = pdr.get_data_yahoo(ticker, start=start_str, end=end_str)
+    stocks_df_1 = pdr.get_data_yahoo(ticker, start=start_date, end=end_date)
     st.dataframe(stocks_df_1)
     
     # Step 1: Download Data
