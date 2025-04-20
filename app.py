@@ -24,18 +24,20 @@ tz = pytz.timezone('Asia/Kolkata')
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
     start_date = st.date_input("📅 Select Start Date", datetime(2020, 1, 1).date())
-    end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
+    end_date = st.sidebar.date_input("End Date", value=(datetime.now() - timedelta(days=1)).date())
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
     ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 
+    # Convert dates to timezone-aware datetime objects
+    start_datetime = tz.localize(datetime.combine(start_date, datetime.min.time()))
+    end_datetime = tz.localize(datetime.combine(end_date, datetime.min.time()))
+
 # ----------------------
 # Forecast Logic
 # ----------------------
 if run_forecast:
-    start_dt = tz.localize(datetime.combine(start_date, datetime.min.time()))
-    end_dt = tz.localize(datetime.combine(end_date, datetime.min.time()))
     
     # Secure W&B login using Streamlit secrets
     wandb.login(key=os.environ.get("WANDB_API_KEY"))
@@ -55,7 +57,7 @@ if run_forecast:
 
     # Step 1: Download Data using yfinance
     stock = yf.Ticker(ticker)
-    stocks_df_1 = stock.history(period='1d', start=start_dt, end=end_dt)
+    stocks_df_1 = stock.history(period='1d', start=start_datetime, end=end_datetime)
     st.dataframe(stocks_df_1)
 
     # Step 1: Download Data
