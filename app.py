@@ -145,20 +145,12 @@ if run_forecast:
             last_sequence = np.append(last_sequence[:, 1:, :], [[[next_pred]]], axis=1)
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
-
-        # Log Forecast Metrics
-        wandb.log({
-        "start_price": forecast_df['Forecast'].iloc[0],
-        "end_price": forecast_df['Forecast'].iloc[-1],
-        "max_price": forecast_df['Forecast'].max(),
-        "min_price": forecast_df['Forecast'].min()
-        })
         
-        # Step 5: Confidence Intervals (±95%)
+        # Confidence Intervals (±95%)
         lower_bound = forecast * 0.95
         upper_bound = forecast * 1.05
 
-        # Step 6: Prepare Forecast DataFrame
+        # Prepare Forecast DataFrame
         forecast_dates = pd.date_range(start=stocks_df.index[-1] + pd.Timedelta(days=1), periods=forecast_horizon)
         forecast_df = pd.DataFrame({
             'Forecast': forecast,
@@ -171,6 +163,14 @@ if run_forecast:
         last_date = forecast_df.index[-1].strftime("%Y-%m-%d")
         first_value = forecast_df['Forecast'].iloc[0]
         last_value = forecast_df['Forecast'].iloc[-1]
+
+        # Log Forecast Metrics
+        wandb.log({
+        "start_price": forecast_df['Forecast'].iloc[0],
+        "end_price": forecast_df['Forecast'].iloc[-1],
+        "max_price": forecast_df['Forecast'].max(),
+        "min_price": forecast_df['Forecast'].min()
+        })
 
         st.markdown("### 📌 Key Forecast Insights")
         kpi1, spacer, kpi2 = st.columns([2, 0.5, 2])
