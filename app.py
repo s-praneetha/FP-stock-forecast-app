@@ -134,7 +134,14 @@ if run_forecast:
         model_artifact.add_file("lstm_model_1.h5")
         #wandb.log({"model_file": model_artifact})
         wandb.log_artifact(model_artifact)
-        
+
+
+        # Log datasets
+        dataset_artifact = wandb.Artifact("Model_Dataset", type="dataset")
+        with dataset_artifact.new_file("Model_Dataset.csv") as f:
+            stocks_df.to_csv(f)
+        wandb.log_artifact(dataset_artifact)
+
         # Forecasting with the trained model
         forecast_scaled = []
         last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
