@@ -28,8 +28,6 @@ with st.sidebar:
     ticker = st.text_input("💹 Stock Ticker Symbol", value="GOOGL")
     run_forecast = st.button("📊 Run Forecast")
 # Timezone-safe dates (yfinance sometimes expects strings)
-# start_str = start_date.strftime("%Y-%m-%d")
-# end_str = end_date.strftime("%Y-%m-%d")
 
 def fetch_stock_data(ticker, start_date, end_date, retries=3, delay=2):
     for attempt in range(retries):
@@ -52,13 +50,13 @@ if run_forecast:
     stocks_df_1 = fetch_stock_data(ticker, start_date, end_date)
     st.dataframe(stocks_df_1)
     
-    # Step 1: Download Data
-    stocks_df = yf.download(ticker,
-                            start=start_str,
-                            end=end_str,
-                            interval='1d',
-                            auto_adjust=False)
-    st.dataframe(stocks_df)
+    # # Step 1: Download Data
+    # stocks_df = yf.download(ticker,
+    #                         start=start_str,
+    #                         end=end_str,
+    #                         interval='1d',
+    #                         auto_adjust=False)
+    # st.dataframe(stocks_df)
     
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
