@@ -1,14 +1,14 @@
 import pandas as pd
 import numpy as np
-from yahooquery import Ticker
+import yfinance as yf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-import tensorflow as tf
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 from datetime import date, timedelta
 import streamlit as st
 import wandb
 import os
+import requests_cache
 
 # ----------------------
 # Streamlit UI Setup
@@ -18,55 +18,59 @@ st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 
 # Sidebar Controls
 with st.sidebar:
-    st.markdown("### 🧼 Forecasting Controls")
-    start_date = st.date_input("🗓️ Select Start Date", date(2020, 1, 1))
-    end_date = date.today() - timedelta(days=1)
+    st.markdown("### 🧮 Forecasting Controls")
+    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
+    end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
-    ticker = st.text_input("📉 Stock Ticker Symbol", value="TATASTEEL.NS")
+    ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 
 # ----------------------
 # Forecast Logic
 # ----------------------
 if run_forecast:
+    # Secure W&B login using Streamlit secrets
     wandb.login(key=os.environ.get("WANDB_API_KEY"))
-
+    # Initialize W&B
     wandb.init(
-        project="stock-forecasting-lstm",
-        name=f"{ticker}_{date.today()}",
-        config={
-            "ticker": ticker,
-            "start_date": start_date,
-            "forecast_horizon": forecast_horizon,
-            "model": "LSTM",
-            "window_size": 60
-        },
-        reinit=True
+    project="stock-forecasting-lstm",
+    name=f"{ticker}_{date.today()}",
+    config={
+        "ticker": ticker,
+        "start_date": start_date,
+        "forecast_horizon": forecast_horizon,
+        "model": "LSTM",
+        "window_size": 60
+    },
+    reinit=True  # Avoids conflicts in Streamlit reruns 
     )
+    # Step 1: Download Data
+    stocks_df = yf.download(ticker,
+                            start=start_date,
+                            end=end_date,
+                            interval='1d',
+                            auto_adjust=False)
+    # session = requests_cache.CachedSession(cache_name='yfinance_cache', backend='memory', expire_after=180)
 
-    # Step 1: Fetch data using yahooquery
-    try:
-        ticker_obj = Ticker(ticker)
-        df = ticker_obj.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), interval="1d")
-        df = df.reset_index()
-        df = df[df['symbol'] == ticker]
-        df = df[['date', 'adjclose']]
-        df.columns = ['Date', 'Adj_Close']
-        df.set_index('Date', inplace=True)
-        df.index = pd.to_datetime(df.index)
-        stocks_df = df.copy()
-    except Exception as e:
-        st.error(f"❌ Failed to fetch data using yahooquery: {e}")
-        stocks_df = pd.DataFrame()
+    # stocks_df = yf.download(
+    #     tickers=ticker,
+    #     start=start_date,
+    #     end=end_date,
+    #     interval="1d",
+    #     auto_adjust=False,
+    #     progress=False,
+    #     threads=False,
+    #     session=session
+    #     )
+    if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
-
-    # Proceed only if data is valid
+    
     if 'Adj_Close' not in stocks_df.columns or stocks_df.empty:
         st.error("'Adj_Close' not found in data or empty dataset.")
     else:
         stocks_df = stocks_df[['Adj_Close']].dropna()
-        stocks_df.columns = ['adj_close']
+        stocks_df.columns = ['adj_close'] 
 
         # Step 2: Preprocessing
         scaler = MinMaxScaler()
@@ -83,7 +87,7 @@ if run_forecast:
         X_input = X_input.reshape((X_input.shape[0], X_input.shape[1], 1))
 
         # Step 3: Load Model
-        model = load_model("lstm_model_1.keras")
+        model = load_model("lstm_model_1.h5", compile=False)
 
         # Step 4: Forecast
         last_sequence = scaled_data[-window_size:].reshape(1, window_size, 1)
@@ -96,7 +100,7 @@ if run_forecast:
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
 
-        # Step 5: Confidence Intervals
+        # Step 5: Confidence Intervals (±5%)
         lower_bound = forecast * 0.95
         upper_bound = forecast * 1.05
 
@@ -107,15 +111,15 @@ if run_forecast:
             'Lower Bound (95%)': lower_bound,
             'Upper Bound (95%)': upper_bound
         }, index=forecast_dates)
-
+        # Log Forecast Metrics
         wandb.log({
-            "start_price": forecast_df['Forecast'].iloc[0],
-            "end_price": forecast_df['Forecast'].iloc[-1],
-            "max_price": forecast_df['Forecast'].max(),
-            "min_price": forecast_df['Forecast'].min()
-        })
+        "start_price": forecast_df['Forecast'].iloc[0],
+        "end_price": forecast_df['Forecast'].iloc[-1],
+        "max_price": forecast_df['Forecast'].max(),
+        "min_price": forecast_df['Forecast'].min()
+         })
 
-        # Step 7: KPI Cards
+        # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
         last_date = forecast_df.index[-1].strftime("%Y-%m-%d")
         first_value = forecast_df['Forecast'].iloc[0]
@@ -124,11 +128,11 @@ if run_forecast:
         st.markdown("### 📌 Key Forecast Insights")
         kpi1, spacer, kpi2 = st.columns([2, 0.5, 2])
         with kpi1:
-            st.metric(label=f"🗓️ First Forecast Date\n({first_date})", value=f"{first_value:.2f}")
+            st.metric(label=f"📅 First Forecast Date\n({first_date})", value=f"{first_value:.2f}")
         with kpi2:
-            st.metric(label=f"🗓️ Last Forecast Date\n({last_date})", value=f"{last_value:.2f}")
+            st.metric(label=f"📅 Last Forecast Date\n({last_date})", value=f"{last_value:.2f}")
 
-        # Step 8: Plot Forecast
+        # Step 8: Plot Forecast with Confidence Interval
         st.markdown(f"### 📆 Forecast for Next **{forecast_horizon}** Days")
         fig, ax = plt.subplots(figsize=(12, 6))
         ax.plot(stocks_df.index, stocks_df['adj_close'], label='Historical', color='steelblue')
@@ -141,7 +145,7 @@ if run_forecast:
         ax.grid(True)
         st.pyplot(fig)
 
-        # Step 9: Forecast Table + CSV
+        # Step 9: Forecast Table and Download (Centered)
         st.markdown("### 🔢 Forecast Table")
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -153,32 +157,72 @@ if run_forecast:
 
             csv = forecast_df.to_csv().encode('utf-8')
             st.download_button(
-                label="📅 Download Forecast CSV",
+                label="📥 Download Forecast CSV",
                 data=csv,
                 file_name=f"{ticker}_forecast.csv",
                 mime='text/csv'
             )
 
-        # Step 10: Visual Insight
+        # Step 10: Visual Insights on Forecasted Data (With Identifiers)
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("### 🔍 Visual Insights on Forecast Fluctuations")
+
         forecast_df['Change'] = forecast_df['Forecast'].diff()
         colors = ['green' if val >= 0 else 'red' for val in forecast_df['Change'][1:]]
+
         col1, col2 = st.columns([1, 1])
 
+        # --------- LEFT PLOT: Forecast Trend with Markers and Labels ---------
         with col1:
             fig_left, ax_left = plt.subplots(figsize=(10, 5))
             ax_left.plot(forecast_df.index, forecast_df['Forecast'], label='Forecast', color='black', linewidth=2)
             ax_left.scatter(forecast_df.index[1:], forecast_df['Forecast'][1:], c=colors, s=60)
-            ax_left.set_title("Forecast Trend with Daily Markers")
-            ax_left.grid(True)
-            st.pyplot(fig_left)
 
+            # Annotate start and end
+            ax_left.annotate(f"Start: {forecast_df['Forecast'].iloc[0]:.2f}",
+                             (forecast_df.index[0], forecast_df['Forecast'].iloc[0]),
+                             textcoords="offset points", xytext=(0, 10), ha='center', fontsize=9, color='blue')
+
+            ax_left.annotate(f"End: {forecast_df['Forecast'].iloc[-1]:.2f}",
+                             (forecast_df.index[-1], forecast_df['Forecast'].iloc[-1]),
+                             textcoords="offset points", xytext=(0, 10), ha='center', fontsize=9, color='blue')
+
+            # Annotate max value
+            max_idx = forecast_df['Forecast'].idxmax()
+            max_val = forecast_df['Forecast'].max()
+            ax_left.annotate(f"Max: {max_val:.2f}",
+                             (max_idx, max_val),
+                             textcoords="offset points", xytext=(0, -15), ha='center', fontsize=9, color='green')
+
+            ax_left.set_title("Forecast Trend with Daily Markers", fontsize=14)
+            ax_left.set_ylabel("Price")
+            ax_left.grid(True)
+            st.pyplot(fig_left, use_container_width=True)
+
+        # --------- RIGHT PLOT: Daily Change Bars with Highlighted Extremes ---------
         with col2:
             fig_right, ax_right = plt.subplots(figsize=(10, 5))
             ax_right.bar(forecast_df.index[1:], forecast_df['Change'][1:], color=colors)
             ax_right.axhline(0, color='black', linewidth=1.2)
-            ax_right.set_title("Day-over-Day Change in Forecast")
-            ax_right.grid(True)
-            st.pyplot(fig_right)
 
-        wandb.finish()
+            # Max upward change
+            max_up_idx = forecast_df['Change'].idxmax()
+            max_up_val = forecast_df['Change'].max()
+            ax_right.annotate(f"+{max_up_val:.2f}",
+                              (max_up_idx, max_up_val),
+                              textcoords="offset points", xytext=(0, 10), ha='center', fontsize=9, color='green')
+
+            # Max downward change
+            max_down_idx = forecast_df['Change'].idxmin()
+            max_down_val = forecast_df['Change'].min()
+            ax_right.annotate(f"{max_down_val:.2f}",
+                              (max_down_idx, max_down_val),
+                              textcoords="offset points", xytext=(0, -15), ha='center', fontsize=9, color='red')
+
+            ax_right.set_title("Day-over-Day Change in Forecast", fontsize=14)
+            ax_right.set_ylabel("Change")
+            ax_right.grid(True)
+            st.pyplot(fig_right, use_container_width=True)
+
+wandb.finish()
