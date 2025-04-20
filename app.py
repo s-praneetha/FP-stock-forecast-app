@@ -26,7 +26,7 @@ with st.sidebar:
     start_date = st.date_input("📅 Select Start Date", date(2023, 1, 1))
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is auto-set to yesterday:** {end_date}")
-    forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 90, 30, 360)
+    forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 60, 90, 360)
     ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 # Timezone-safe dates (yfinance sometimes expects strings)
