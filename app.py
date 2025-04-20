@@ -30,12 +30,25 @@ with st.sidebar:
 # start_str = start_date.strftime("%Y-%m-%d")
 # end_str = end_date.strftime("%Y-%m-%d")
 
+def fetch_stock_data(ticker, start_date, end_date, retries=3, delay=2):
+    for attempt in range(retries):
+        try:
+            # Try fetching stock data using pandas_datareader
+            stocks_df = pdr.get_data_yahoo(ticker, start=start_date, end=end_date)
+            return stocks_df
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(delay)  # Wait before retrying
+            else:
+                st.error(f"Error fetching data for {ticker}: {e}")
+                return None
+                
 # ----------------------
 # Forecast Logic
 # ----------------------
 if run_forecast:
 
-    stocks_df_1 = pdr.get_data_yahoo(ticker, start=start_date, end=end_date)
+    stocks_df_1 = fetch_stock_data(ticker, start_date, end_date)
     st.dataframe(stocks_df_1)
     
     # Step 1: Download Data
