@@ -14,6 +14,8 @@ from pandas_datareader import data as pdr
 import time
 import wandb
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
 
 # ----------------------
 # Streamlit UI Setup
@@ -108,7 +110,7 @@ if run_forecast:
         model.compile(optimizer=optimizer, loss='mean_squared_error')
         
         #model.compile(optimizer='adam', loss='mean_squared_error')
-        model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=1)
+        model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1)
         
         model.save("lstm_model_1.h5")
 
