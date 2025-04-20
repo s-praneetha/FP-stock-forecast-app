@@ -128,13 +128,15 @@ if run_forecast:
             "mape": mape
         })
 
-        # Log Model File to W&B
-        wandb.save("lstm_model_1.h5")  # Save the model file
+        # Log Model File as an Artifact
+        model_artifact = wandb.Artifact('lstm_model', type='model')
+        model_artifact.add_file("lstm_model_1.h5")
+        wandb.log({"model_file": model_artifact})
 
         # Log Historical Dataset as CSV
         csv_file = "historical_data.csv"
         stocks_df.to_csv(csv_file)
-        wandb.save(csv_file)  # Log the dataset
+        wandb.save(csv_file)
         
         # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
