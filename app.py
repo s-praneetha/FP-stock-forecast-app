@@ -23,10 +23,10 @@ st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 # Sidebar Controls
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
-    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
+    start_date = st.date_input("📅 Select Start Date", date(2023, 1, 1))
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
-    st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
-    forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
+    st.markdown(f"🛑 **End Date is auto-set to yesterday:** {end_date}")
+    forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 90, 30, 360)
     ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 # Timezone-safe dates (yfinance sometimes expects strings)
@@ -142,7 +142,7 @@ if run_forecast:
         ax.plot(stocks_df.index, stocks_df['adj_close'], label='Historical', color='steelblue')
         ax.plot(forecast_df.index, forecast_df['Forecast'], label='Forecast', linestyle='--', color='orange')
         ax.fill_between(forecast_df.index, forecast_df['Lower Bound (95%)'], forecast_df['Upper Bound (95%)'],
-                        color='orange', alpha=0.2, label='Confidence Interval (±5%)')
+                        color='orange', alpha=0.2, label='Confidence Interval (±95%)')
         ax.set_xlabel("Date")
         ax.set_ylabel("Adjusted Close Price")
         ax.legend()
