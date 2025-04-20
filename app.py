@@ -20,11 +20,10 @@ st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
     start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
-    st.markdown(f"{start_date}")
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
-    ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
+    ticker = st.text_input("💹 Stock Ticker Symbol", value="GOOG")
     run_forecast = st.button("📊 Run Forecast")
 
 # ----------------------
@@ -38,7 +37,8 @@ if run_forecast:
                             end=end_date,
                             interval='1d',
                             auto_adjust=False)
-
+    st.dataframe(stocks_df)
+    
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
     
