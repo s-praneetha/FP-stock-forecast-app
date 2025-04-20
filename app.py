@@ -52,11 +52,15 @@ if run_forecast:
                             end=end_date,
                             interval='1d',
                             auto_adjust=False)
-
+                            
+    st.dataframe(stocks_df)
+                        
     if 'Adj Close' in stocks_df.columns:
+        st.dataframe(stocks_df)
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
     
     if 'Adj_Close' not in stocks_df.columns or stocks_df.empty:
+        st.dataframe(stocks_df)
         st.error("'Adj_Close' not found in data or empty dataset.")
     else:
         stocks_df = stocks_df[['Adj_Close']].dropna()
