@@ -25,38 +25,21 @@ with st.sidebar:
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
-    ticker = st.text_input("💹 Stock Ticker Symbol", value="GOOGL")
+    ticker = st.text_input("💹 Stock Ticker Symbol", value="TATASTEEL.NS")
     run_forecast = st.button("📊 Run Forecast")
 # Timezone-safe dates (yfinance sometimes expects strings)
-
-def fetch_stock_data(ticker, start_date, end_date, retries=3, delay=2):
-    for attempt in range(retries):
-        try:
-            # Try fetching stock data using pandas_datareader
-            stocks_df_1 = pdr.get_data_yahoo(ticker, start=start_date, end=end_date)
-            return stocks_df_1
-        except Exception as e:
-            if attempt < retries - 1:
-                time.sleep(delay)  # Wait before retrying
-            else:
-                st.error(f"Error fetching data for {ticker}: {e}")
-                return None
                 
 # ----------------------
 # Forecast Logic
 # ----------------------
 if run_forecast:
-
-    stocks_df_1 = fetch_stock_data(ticker, start_date, end_date)
-    st.dataframe(stocks_df_1)
-    
-    # # Step 1: Download Data
-    # stocks_df = yf.download(ticker,
-    #                         start=start_str,
-    #                         end=end_str,
-    #                         interval='1d',
-    #                         auto_adjust=False)
-    # st.dataframe(stocks_df)
+    # Step 1: Download Data
+    stocks_df = yf.download(ticker,
+                            start=start_str,
+                            end=end_str,
+                            interval='1d',
+                            auto_adjust=False)
+    st.dataframe(stocks_df)
     
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
