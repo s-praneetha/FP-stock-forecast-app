@@ -39,7 +39,9 @@ if run_forecast:
                             end=end_date,
                             interval='1d',
                             auto_adjust=False)
-    st.dataframe(stocks_df)
+    st.markdown("#### Previous day's Stock Price ")
+    last_row = stocks_df.tail(1)  # Get the last row of the dataframe
+    st.table(last_row)
     
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
