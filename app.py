@@ -46,8 +46,12 @@ if run_forecast:
     reinit=True  # Avoids conflicts in Streamlit reruns 
     )
     # Step 1: Download Data
-    stocks_df = pd.read_csv("tatasteel_5yr.csv", index_col="Date", parse_dates=True)
-    stocks_df = stocks_df[(stocks_df.index >= pd.to_datetime(start_date)) & (stocks_df.index <= pd.to_datetime(end_date))]
+    stocks_df = pd.read_csv("tatasteel_5yr.csv", index_col=0, parse_dates=True)
+    stocks_df.index.name = "Date"
+    stocks_df = stocks_df.loc[
+    (stocks_df.index >= pd.to_datetime(start_date)) & 
+    (stocks_df.index <= pd.to_datetime(end_date))
+    ]
 
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
