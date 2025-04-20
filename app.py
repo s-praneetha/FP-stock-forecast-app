@@ -17,10 +17,13 @@ import requests_cache
 st.set_page_config(page_title="Stock Forecast App", layout="wide")
 st.markdown("## 📈 Tata Steel Stock Price Forecasting")
 
+# Set the timezone to 'Asia/Kolkata'
+tz = pytz.timezone('Asia/Kolkata')
+
 # Sidebar Controls
 with st.sidebar:
     st.markdown("### 🧮 Forecasting Controls")
-    start_date = st.date_input("📅 Select Start Date", date(2020, 1, 1))
+    start_date = st.date_input("📅 Select Start Date", datetime(2020, 1, 1).date())
     end_date = date.today() - timedelta(days=1)  # Fixed to today - 1
     st.markdown(f"🛑 **End Date is fixed to:** {end_date}")
     forecast_horizon = st.slider("⏳ Forecast Horizon (Days)", 30, 60, 180)
@@ -31,6 +34,9 @@ with st.sidebar:
 # Forecast Logic
 # ----------------------
 if run_forecast:
+    start_dt = tz.localize(datetime.combine(start_date, datetime.min.time()))
+    end_dt = tz.localize(datetime.combine(end_date, datetime.min.time()))
+    
     # Secure W&B login using Streamlit secrets
     wandb.login(key=os.environ.get("WANDB_API_KEY"))
     # Initialize W&B
@@ -49,7 +55,7 @@ if run_forecast:
 
     # Step 1: Download Data using yfinance
     stock = yf.Ticker(ticker)
-    stocks_df_1 = stock.history(period='1d', start=start_date, end=end_date)
+    stocks_df_1 = stock.history(period='1d', start=start_dt, end=end_dt)
     st.dataframe(stocks_df_1)
 
     # Step 1: Download Data
