@@ -11,6 +11,7 @@ import os
 import requests_cache
 from pandas_datareader import data as pdr
 import time
+import wandb
 
 # ----------------------
 # Streamlit UI Setup
@@ -33,6 +34,21 @@ with st.sidebar:
 # Forecast Logic
 # ----------------------
 if run_forecast:
+    # Secure W&B login using Streamlit secrets
+    wandb.login(key=os.environ.get("WANDB_API_KEY"))
+    # Initialize W&B
+    wandb.init(
+    project="stock-forecasting-lstm",
+    name=f"{ticker}_{date.today()}",
+    config={
+        "ticker": ticker,
+        "start_date": start_date,
+        "forecast_horizon": forecast_horizon,
+        "model": "LSTM",
+        "window_size": 60
+    },
+    reinit=True  # Avoids conflicts in Streamlit reruns 
+    )
     # Step 1: Download Data
     stocks_df = yf.download(ticker,
                             start=start_date,
@@ -41,7 +57,8 @@ if run_forecast:
                             auto_adjust=False)
     st.markdown("#### Previous day's Stock Price ")
     last_row = stocks_df.tail(1)  # Get the last row of the dataframe
-    st.table(last_row)
+    styled_table = last_row.style.set_properties(**{'text-align': 'center'})
+    st.dataframe(styled_table)
     
     if 'Adj Close' in stocks_df.columns:
         stocks_df.rename(columns={'Adj Close': 'Adj_Close'}, inplace=True)
@@ -80,7 +97,9 @@ if run_forecast:
 
         forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1)).flatten()
 
-        # Step 5: Confidence Intervals (±5%)
+        run_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Step 5: Confidence Intervals (±95%)
         lower_bound = forecast * 0.95
         upper_bound = forecast * 1.05
 
@@ -91,7 +110,17 @@ if run_forecast:
             'Lower Bound (95%)': lower_bound,
             'Upper Bound (95%)': upper_bound
         }, index=forecast_dates)
-
+        
+        # Log Forecast Metrics
+        wandb.log({
+        "start_price": forecast_df['Forecast'].iloc[0],
+        "end_price": forecast_df['Forecast'].iloc[-1],
+        "max_price": forecast_df['Forecast'].max(),
+        "min_price": forecast_df['Forecast'].min(),
+        "model_file": "lstm_model_1.h5",  # Model file path
+        "run_date": run_date
+         })
+        
         # Step 7: KPI Cards – Head1 & Tail1
         first_date = forecast_df.index[0].strftime("%Y-%m-%d")
         last_date = forecast_df.index[-1].strftime("%Y-%m-%d")
@@ -197,3 +226,4 @@ if run_forecast:
             ax_right.set_ylabel("Change")
             ax_right.grid(True)
             st.pyplot(fig_right, use_container_width=True)
+wandb.finish()
