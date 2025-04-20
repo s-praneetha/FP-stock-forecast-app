@@ -9,7 +9,7 @@ import streamlit as st
 import wandb
 import os
 import requests_cache
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 from keras.saving.legacy.saved_model import load_model as legacy_load_model
 
 # ----------------------
